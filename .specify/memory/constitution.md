@@ -1,55 +1,87 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+Version change: N/A -> 1.0.0
+Modified principles: All principles are new (N/A -> I-VI)
+Added sections: Technology Stack Requirements, Development Workflow
+Removed sections: None (all template placeholders replaced)
+Templates requiring updates:
+  - .specify/templates/plan-template.md: ✅ Constitution Check section should reference new principles
+  - .specify/templates/spec-template.md: ⚠ Pending alignment with new workflow
+  - .specify/templates/tasks-template.md: ⚠ Pending alignment with new workflow
+  - .specify/templates/commands/*.md: ⚠ Pending review for outdated references
+Follow-up TODOs: None
+-->
+# Todo Spec-Driven Development Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Spec-Driven Development (NON-NEGOTIABLE)
+All development must follow the Spec-Kit Plus workflow: Specify → Plan → Tasks → Implement. No code may be written without a corresponding task derived from an approved specification. This ensures alignment between requirements and implementation, prevents "vibe coding," and maintains traceability from user needs to code artifacts.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. AI-Native Development
+Leverage Claude Code and other AI agents as primary development tools. Human developers focus on system architecture, specification, and validation rather than syntax implementation. All code generation must be done through AI agents following the established workflow, with humans providing requirements and reviewing outputs.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Progressive Evolution Architecture
+Follow the 5-phase evolution approach: Console App → Full-Stack Web → AI Chatbot → Kubernetes Deployment → Advanced Cloud Features. Each phase builds incrementally on the previous one, with architectural decisions considering the next phase's requirements. Maintain clean abstractions that support this evolution path.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Full-Stack Integration
+Frontend (Next.js) and Backend (FastAPI) development must be coordinated through shared specifications. Use consistent data models, API contracts, and authentication patterns across both layers. Implement proper separation of concerns while maintaining tight integration between components.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Cloud-Native First
+Design all features with cloud deployment in mind, using containerization, microservices patterns, and infrastructure-as-code. Implement stateless services where possible, with externalized configuration and secrets management. Ensure all components are horizontally scalable and resilient.
 
-### [PRINCIPLE_6_NAME]
+### VI. MCP-Enabled Tooling
+All AI interactions must be enabled through Model Context Protocol (MCP) servers. MCP tools provide standardized interfaces for AI agents to interact with application functionality, enabling natural language processing of user requests into application operations.
 
+## Technology Stack Requirements
 
-[PRINCIPLE__DESCRIPTION]
+### Core Technologies
+- Frontend: Next.js 16+ with TypeScript and Tailwind CSS
+- Backend: Python FastAPI with SQLModel ORM
+- Database: Neon Serverless PostgreSQL
+- Authentication: Better Auth with JWT tokens
+- AI Integration: OpenAI Agents SDK with MCP
+- Containerization: Docker with Gordon AI assistance
+- Orchestration: Kubernetes (Minikube/DigitalOcean)
+- Package Management: Helm Charts
+- AIOps: kubectl-ai and Kagent
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### Deployment Requirements
+- Local development: WSL 2 on Windows, native Linux/Mac
+- Frontend hosting: Vercel
+- API deployment: Kubernetes clusters (Minikube for local, DigitalOcean for cloud)
+- Database: Neon Serverless PostgreSQL with proper connection pooling
+- Authentication: JWT-based with shared secrets between frontend and backend
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## Development Workflow
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### Specification Process
+1. All features must begin with a complete specification in the /specs directory
+2. Specifications must include user stories, acceptance criteria, and technical requirements
+3. Specifications must be validated before implementation begins
+4. Specifications must map to concrete implementation tasks
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### Implementation Process
+1. Read relevant specification before implementing any feature
+2. Reference specifications with @specs/ notation in prompts
+3. Implement only what is specified - no feature creep
+4. Update specifications if requirements change during development
+
+### Quality Standards
+1. All code must be generated by Claude Code following the specification
+2. No manual code changes outside of specification-driven implementation
+3. All API endpoints must be properly documented and tested
+4. Authentication and authorization must be implemented consistently
+5. Error handling must be comprehensive and user-friendly
+
+### Review and Validation
+1. Each phase must be completed before proceeding to the next
+2. All deliverables must match the requirements in the Hackathon document
+3. Code quality must meet the standards defined in the project documentation
+4. Security and performance considerations must be addressed at each phase
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution governs all development activities for the Todo Spec-Driven Development project. All team members and AI agents must comply with these principles. Changes to this constitution require explicit approval and must be documented with a clear rationale. The constitution supersedes all other practices and guidelines not explicitly aligned with these principles. Implementation of new features or architectural changes that conflict with these principles is prohibited without constitutional amendment.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-12-28 | **Last Amended**: 2025-12-28

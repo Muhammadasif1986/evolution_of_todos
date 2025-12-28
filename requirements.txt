@@ -1,0 +1,4 @@
+# No external dependencies required for the basic console app
+# Using only built-in Python libraries
+# For testing
+pytest>=7.0.0
