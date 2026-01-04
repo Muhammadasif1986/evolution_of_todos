@@ -1,7 +1,10 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import uuid
+
+# Using str instead of EmailStr to avoid email-validator dependency
+EmailStr = str
 
 
 class UserBase(BaseModel):
