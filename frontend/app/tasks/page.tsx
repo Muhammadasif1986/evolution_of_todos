@@ -20,6 +20,7 @@ export default function TasksPage() {
   const [editTaskData, setEditTaskData] = useState({ title: '', description: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userName, setUserName] = useState('Muhammad Asif');
   const router = useRouter();
 
   // Check if user is authenticated
@@ -130,15 +131,13 @@ export default function TasksPage() {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
+      // Use the /complete endpoint for toggling task completion
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/complete`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          completed: !tasks.find(task => task.id === taskId)?.completed
-        }),
       });
 
       if (!response.ok) {
@@ -272,7 +271,8 @@ export default function TasksPage() {
         {/* Page Header */}
         <div className="mb-12 animate-fade-in-up">
           <h1 className="text-4xl font-bold mb-2">
-            <span className="text-gray-900">My Tasks</span>
+            <span className="text-gray-900">Welcome back, </span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{userName}</span>
           </h1>
           <p className="text-gray-600 text-lg">
             {tasks.length === 0
