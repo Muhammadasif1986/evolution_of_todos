@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/ui/Header';
-import { taskApi } from '@/lib/api';
 
 interface Task {
   id: number;
@@ -17,6 +16,8 @@ interface Task {
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState({ title: '', description: '' });
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editTaskData, setEditTaskData] = useState({ title: '', description: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -52,7 +53,22 @@ export default function TasksPage() {
         return;
       }
 
-      const tasksData = await taskApi.getTasks();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to load tasks');
+      }
+
+      const tasksData = await response.json();
       setTasks(tasksData);
       setLoading(false);
     } catch (err) {
@@ -75,12 +91,28 @@ export default function TasksPage() {
         return;
       }
 
-      const newTaskData = await taskApi.createTask({
-        title: newTask.title,
-        description: newTask.description,
-        completed: false
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newTask.title,
+          description: newTask.description,
+          completed: false
+        }),
       });
 
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to add task');
+      }
+
+      const newTaskData = await response.json();
       setTasks([newTaskData, ...tasks]);
       setNewTask({ title: '', description: '' });
     } catch (err) {
@@ -98,8 +130,26 @@ export default function TasksPage() {
         return;
       }
 
-      const updatedTask = await taskApi.toggleTaskCompletion(taskId);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          completed: !tasks.find(task => task.id === taskId)?.completed
+        }),
+      });
 
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to update task');
+      }
+
+      const updatedTask = await response.json();
       setTasks(tasks.map(task =>
         task.id === taskId ? updatedTask : task
       ));
@@ -118,13 +168,35 @@ export default function TasksPage() {
         return;
       }
 
-      await taskApi.deleteTask(taskId);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to delete task');
+      }
 
       setTasks(tasks.filter(task => task.id !== taskId));
     } catch (err) {
       console.error('Failed to delete task:', err);
       setError('Failed to delete task');
     }
+  };
+
+  const startEditing = (task: Task) => {
+    setEditingTaskId(task.id);
+    setEditTaskData({
+      title: task.title,
+      description: task.description
+    });
   };
 
   const updateTask = async (taskId: number, taskData: { title?: string; description?: string; completed?: boolean }) => {
@@ -136,130 +208,277 @@ export default function TasksPage() {
         return;
       }
 
-      const updatedTask = await taskApi.updateTask(taskId, taskData);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData),
+      });
 
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login');
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update task');
+      }
+
+      const updatedTask = await response.json();
       setTasks(tasks.map(task =>
         task.id === taskId ? updatedTask : task
       ));
-    } catch (err) {
+
+      // Reset edit state after successful update
+      setEditingTaskId(null);
+      setEditTaskData({ title: '', description: '' });
+    } catch (err: any) {
       console.error('Failed to update task:', err);
-      setError('Failed to update task');
+      setError(err.message || 'Failed to update task');
     }
+  };
+
+  const handleEditSubmit = (taskId: number, e: React.FormEvent) => {
+    e.preventDefault();
+    updateTask(taskId, editTaskData);
+  };
+
+  const cancelEditing = () => {
+    setEditingTaskId(null);
+    setEditTaskData({ title: '', description: '' });
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading tasks...</p>
+      <div className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center animate-fade-in-up">
+          <div className="flex justify-center mb-4">
+            <div className="spinner w-12 h-12" />
+          </div>
+          <p className="text-lg font-medium text-gray-700">Loading your tasks...</p>
+          <p className="text-sm text-gray-500 mt-2">One moment please</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50 to-purple-50">
       <Header />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Tasks</h1>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Page Header */}
+        <div className="mb-12 animate-fade-in-up">
+          <h1 className="text-4xl font-bold mb-2">
+            <span className="text-gray-900">My Tasks</span>
+          </h1>
+          <p className="text-gray-600 text-lg">
+            {tasks.length === 0
+              ? 'Start by creating your first task'
+              : `You have ${tasks.length} task${tasks.length !== 1 ? 's' : ''} • ${tasks.filter((t) => t.completed).length} completed`}
+          </p>
         </div>
 
+        {/* Error Alert */}
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{error}</span>
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg flex items-start gap-3 animate-slide-down">
+            <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm font-medium text-red-800">{error}</span>
           </div>
         )}
 
         {/* Add Task Form */}
-        <form onSubmit={handleAddTask} className="mb-8 bg-white shadow rounded-lg p-6">
+        <form onSubmit={handleAddTask} className="mb-12 card glass-dark backdrop-blur-xl border border-white/20 animate-scale-in">
           <div className="grid grid-cols-1 gap-6">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="title" className="form-label text-gray-800">
                 Task Title
               </label>
               <input
                 type="text"
                 id="title"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="input-base text-gray-900 bg-white/80 hover:bg-white transition-colors"
                 placeholder="What needs to be done?"
                 value={newTask.title}
                 onChange={(e) => setNewTask({...newTask, title: e.target.value})}
                 required
               />
             </div>
+
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="description" className="form-label text-gray-800">
                 Description (Optional)
               </label>
               <textarea
                 id="description"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Add details..."
+                className="input-base text-gray-900 bg-white/80 hover:bg-white transition-colors resize-none"
+                placeholder="Add details, notes, or reminders..."
                 value={newTask.description}
                 onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-              ></textarea>
+              />
             </div>
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Add Task
-              </button>
-            </div>
+
+            <button
+              type="submit"
+              className="btn-primary w-full flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+              Add Task
+            </button>
           </div>
         </form>
 
         {/* Tasks List */}
-        <div className="bg-white shadow overflow-hidden rounded-lg">
-          <ul className="divide-y divide-gray-200">
-            {tasks.length === 0 ? (
-              <li className="px-4 py-8 text-center">
-                <p className="text-gray-500">No tasks yet. Add your first task above!</p>
-              </li>
-            ) : (
-              tasks.map((task) => (
-                <li key={task.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
+        <div className="space-y-4">
+          {tasks.length === 0 ? (
+            <div className="card glass-dark backdrop-blur-xl border border-white/20 text-center py-16 animate-fade-in-up">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-accent-primary/10 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-accent-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-lg font-medium text-gray-700 mb-2">No tasks yet</p>
+              <p className="text-gray-500 mb-6">Create your first task to get started</p>
+              <button
+                onClick={() => document.getElementById('title')?.focus()}
+                className="btn-primary inline-flex"
+              >
+                Create Task
+              </button>
+            </div>
+          ) : (
+            tasks.map((task, index) => (
+              <div
+                key={task.id}
+                className="card glass-dark backdrop-blur-xl border border-white/20 hover:shadow-glow-lg transition-all duration-300 animate-slide-up"
+                style={{animationDelay: `${index * 50}ms`}}
+              >
+                {editingTaskId === task.id ? (
+                  // Edit Mode
+                  <form onSubmit={(e) => handleEditSubmit(task.id, e)} className="space-y-4">
+                    <div className="flex items-start gap-4">
                       <input
                         type="checkbox"
                         checked={task.completed}
                         onChange={() => toggleTaskCompletion(task.id)}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        className="w-5 h-5 text-accent-primary border-gray-300 rounded-lg cursor-pointer mt-1 accent-accent-primary"
                       />
-                      <div className="ml-3">
-                        <p className={`text-sm font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                          {task.title}
-                        </p>
-                        {task.description && (
-                          <p className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-500'}`}>
-                            {task.description}
-                          </p>
-                        )}
+                      <div className="flex-1 space-y-3">
+                        <input
+                          type="text"
+                          value={editTaskData.title}
+                          onChange={(e) => setEditTaskData({...editTaskData, title: e.target.value})}
+                          className="input-base text-gray-900 bg-white/80"
+                          placeholder="Task title"
+                          required
+                        />
+                        <textarea
+                          value={editTaskData.description}
+                          onChange={(e) => setEditTaskData({...editTaskData, description: e.target.value})}
+                          className="input-base text-gray-900 bg-white/80 resize-none"
+                          placeholder="Task description"
+                          rows={2}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            className="btn-primary text-sm flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                            </svg>
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditing}
+                            className="btn-outline text-sm flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${task.completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {task.completed ? 'Completed' : 'Pending'}
-                      </span>
-                      <button
-                        onClick={() => deleteTask(task.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </button>
+                  </form>
+                ) : (
+                  // Display Mode
+                  <div className="flex items-start gap-4">
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      onChange={() => toggleTaskCompletion(task.id)}
+                      className="w-5 h-5 text-accent-primary border-gray-300 rounded-lg cursor-pointer mt-1 accent-accent-primary"
+                    />
+
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <p className={`text-base font-semibold transition-all duration-300 ${
+                            task.completed
+                              ? 'line-through text-gray-400'
+                              : 'text-gray-900'
+                          }`}>
+                            {task.title}
+                          </p>
+                          {task.description && (
+                            <p className={`text-sm mt-1 transition-all duration-300 ${
+                              task.completed
+                                ? 'line-through text-gray-400'
+                                : 'text-gray-600'
+                            }`}>
+                              {task.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 ${
+                            task.completed
+                              ? 'badge-success'
+                              : 'badge-warning'
+                          }`}>
+                            {task.completed ? 'Completed' : 'Pending'}
+                          </span>
+
+                          <button
+                            onClick={() => startEditing(task)}
+                            className="p-2 hover:bg-blue-100/50 rounded-lg transition-colors text-blue-600 hover:text-blue-700"
+                            title="Edit task"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                          </button>
+
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            className="p-2 hover:bg-red-100/50 rounded-lg transition-colors text-red-600 hover:text-red-700"
+                            title="Delete task"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </li>
-              ))
-            )}
-          </ul>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
