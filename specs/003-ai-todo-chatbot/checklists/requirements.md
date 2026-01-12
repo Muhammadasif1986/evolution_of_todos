@@ -32,3 +32,4 @@
 ## Notes
 
 - All specification quality criteria have been met and validated
+- Specification has been refined with additional sections: Chat API Endpoint, Stateless Conversation Flow, expanded Agent Behavior Specification, normalized MCP tool parameters, and explicit Non-Goals

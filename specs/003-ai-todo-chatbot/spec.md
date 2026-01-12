@@ -87,17 +87,17 @@ As a user, I want the AI chatbot to handle errors gracefully and provide helpful
 #### add_task
 - **Purpose**: Create a new todo item based on natural language input
 - **Parameters**:
-  - `title` (string, required): The title of the task extracted from user input
-  - `description` (string, optional): Additional details about the task
+  - `task_title` (string, required): The title of the task extracted from user input
+  - `task_description` (string, optional): Additional details about the task
   - `user_id` (string, required): Identifier of the user creating the task
-- **Return Schema**: `{ success: boolean, task_id: string, title: string, message: string }`
-- **Error Cases**: Invalid user_id, database connection failure, title too long/empty
+- **Return Schema**: `{ success: boolean, task_id: string, task_title: string, message: string }`
+- **Error Cases**: Invalid user_id, database connection failure, task_title too long/empty
 
 #### list_tasks
 - **Parameters**:
   - `user_id` (string, required): Identifier of the user whose tasks to list
-  - `filter` (string, optional): Filter type (e.g., "all", "completed", "incomplete")
-- **Return Schema**: `{ success: boolean, tasks: [{id: string, title: string, description: string, completed: boolean}] }`
+  - `filter_type` (string, optional): Filter type (e.g., "all", "completed", "incomplete")
+- **Return Schema**: `{ success: boolean, tasks: [{task_id: string, task_title: string, task_description: string, completed: boolean}] }`
 - **Error Cases**: Invalid user_id, database connection failure
 
 #### complete_task
@@ -118,8 +118,8 @@ As a user, I want the AI chatbot to handle errors gracefully and provide helpful
 - **Parameters**:
   - `task_id` (string, required): Identifier of the task to update
   - `user_id` (string, required): Identifier of the user requesting update
-  - `title` (string, optional): New title for the task
-  - `description` (string, optional): New description for the task
+  - `task_title` (string, optional): New title for the task
+  - `task_description` (string, optional): New description for the task
 - **Return Schema**: `{ success: boolean, task_id: string, updated_fields: [string], message: string }`
 - **Error Cases**: Invalid task_id, user_id mismatch, database connection failure
 
@@ -130,6 +130,75 @@ As a user, I want the AI chatbot to handle errors gracefully and provide helpful
 - **Conversation**: Represents a persistent conversation thread with history and context between user and AI agent
 - **Message**: Represents individual exchanges within a conversation with role (user/assistant) and content
 - **AI Agent**: Represents the intelligent system that interprets natural language and orchestrates MCP tool calls
+
+### Chat API Endpoint
+
+- **Endpoint Path**: `POST /api/{user_id}/chat`
+- **Request Schema**:
+  ```
+  {
+    user_message: string,        // The user's natural language input
+    conversation_id?: string,    // Optional ID to continue existing conversation
+    user_id: string             // The authenticated user's ID
+  }
+  ```
+- **Response Schema**:
+  ```
+  {
+    success: boolean,
+    message: string,             // The AI agent's response to the user
+    conversation_id: string,     // The conversation ID for continuity
+    tool_calls?: [               // Optional tool calls made by the agent
+      {
+        tool_name: string,       // Name of the MCP tool called
+        parameters: object,      // Parameters passed to the tool
+        result: object           // Result returned from the tool
+      }
+    ]
+  }
+  ```
+
+### Stateless Conversation Flow
+
+- **Conversation Creation/Resume**:
+  - When a new conversation starts without a conversation_id, the system creates a new conversation record in the database
+  - When a conversation_id is provided, the system retrieves the existing conversation record
+  - The system authenticates the user and verifies access to the conversation
+
+- **Message History Retrieval**:
+  - The system fetches the last 10 messages from the conversation history for context
+  - If fewer than 10 messages exist, all available messages are retrieved
+  - Messages are ordered chronologically with the oldest first
+
+- **History Passed to Agent**:
+  - The AI agent receives the conversation history as context for understanding the current request
+  - Only the specified number of recent messages (typically 10) are passed to maintain performance and relevance
+  - The current user message is appended to the history before being processed by the agent
+
+### Agent Behavior Specification
+
+- **Tool Selection Priority Rules**:
+  - The agent prioritizes tools based on user intent: add_task > list_tasks > update_task > complete_task > delete_task
+  - For ambiguous requests, the agent selects the most appropriate tool based on keyword matching and context analysis
+  - When multiple tools could apply, the agent selects the one that best matches the user's expressed intent
+
+- **Handling Ambiguous or Multiple Matching Tasks**:
+  - When a user refers to a task that could match multiple existing tasks, the agent lists the potential matches and asks for clarification
+  - For vague references like "that task" or "the previous one", the agent uses conversation context to identify the most likely intended task
+  - If ambiguity persists, the agent requests specific identifiers (e.g., task titles or partial descriptions) to disambiguate
+
+- **Confirmation and Fallback Behavior**:
+  - For destructive operations (deletion, completion), the agent provides clear confirmation of the action before execution
+  - If a tool operation fails, the agent attempts appropriate fallback actions or explains the failure to the user
+  - The agent maintains a friendly, helpful tone and offers alternative approaches when requests cannot be fulfilled as stated
+
+## Non-Goals
+
+- Reimplementing Phase II features such as UI CRUD forms or manual REST task endpoints
+- Maintaining in-memory conversation state or session data
+- Implementing business logic outside of the defined MCP tools
+- Creating duplicate functionality that already exists in the existing UI
+- Managing authentication or user management (these rely on existing infrastructure)
 
 ## Success Criteria *(mandatory)*
 
