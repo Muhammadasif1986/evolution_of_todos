@@ -1,0 +1,258 @@
+# API Contract: Todo Management Service
+
+## Base URL
+`https://api.todoapp.com/v1` (production)
+`http://localhost:8000/v1` (development)
+
+## Authentication
+All endpoints require JWT token in Authorization header:
+```
+Authorization: Bearer {jwt_token}
+```
+
+## User Management Endpoints
+
+### POST /auth/register
+Register a new user account
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "username": "johndoe",
+  "password": "securePassword123",
+  "first_name": "John",
+  "last_name": "Doe"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid-string",
+  "email": "user@example.com",
+  "username": "johndoe",
+  "first_name": "John",
+  "last_name": "Doe",
+  "is_active": true,
+  "created_at": "2025-12-29T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- 201: User created successfully
+- 400: Invalid input data
+- 409: Email or username already exists
+
+### POST /auth/login
+Authenticate user and return JWT token
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "securePassword123"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "jwt_token_string",
+  "token_type": "bearer",
+  "user": {
+    "id": "uuid-string",
+    "email": "user@example.com",
+    "username": "johndoe"
+  }
+}
+```
+
+**Status Codes:**
+- 200: Login successful
+- 401: Invalid credentials
+
+### POST /auth/logout
+Invalidate current session
+
+**Response:**
+```json
+{
+  "message": "Successfully logged out"
+}
+```
+
+## Todo Item Management Endpoints
+
+### GET /todos
+Retrieve user's todo items with optional filtering
+
+**Query Parameters:**
+- `status`: Filter by status (pending, in_progress, completed)
+- `priority`: Filter by priority (low, medium, high, urgent)
+- `limit`: Number of items to return (default: 20, max: 100)
+- `offset`: Number of items to skip (default: 0)
+- `sort`: Sort by field (created_at, due_date, priority) and direction (asc, desc)
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid-string",
+      "title": "Complete project",
+      "description": "Finish the todo application",
+      "status": "pending",
+      "priority": "high",
+      "due_date": "2025-12-31T23:59:59Z",
+      "created_at": "2025-12-29T10:00:00Z",
+      "updated_at": "2025-12-29T10:00:00Z",
+      "completed_at": null
+    }
+  ],
+  "total": 1,
+  "offset": 0,
+  "limit": 20
+}
+```
+
+**Status Codes:**
+- 200: Todos retrieved successfully
+
+### POST /todos
+Create a new todo item
+
+**Request:**
+```json
+{
+  "title": "New task",
+  "description": "Detailed description of the task",
+  "priority": "medium",
+  "due_date": "2025-12-31T23:59:59Z"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid-string",
+  "title": "New task",
+  "description": "Detailed description of the task",
+  "status": "pending",
+  "priority": "medium",
+  "due_date": "2025-12-31T23:59:59Z",
+  "created_at": "2025-12-29T10:00:00Z",
+  "updated_at": "2025-12-29T10:00:00Z",
+  "completed_at": null
+}
+```
+
+**Status Codes:**
+- 201: Todo created successfully
+- 400: Invalid input data
+
+### GET /todos/{id}
+Retrieve a specific todo item
+
+**Response:**
+```json
+{
+  "id": "uuid-string",
+  "title": "Complete project",
+  "description": "Finish the todo application",
+  "status": "pending",
+  "priority": "high",
+  "due_date": "2025-12-31T23:59:59Z",
+  "created_at": "2025-12-29T10:00:00Z",
+  "updated_at": "2025-12-29T10:00:00Z",
+  "completed_at": null
+}
+```
+
+**Status Codes:**
+- 200: Todo retrieved successfully
+- 404: Todo not found
+
+### PUT /todos/{id}
+Update a specific todo item
+
+**Request:**
+```json
+{
+  "title": "Updated task title",
+  "description": "Updated description",
+  "status": "in_progress",
+  "priority": "high",
+  "due_date": "2025-12-31T23:59:59Z"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid-string",
+  "title": "Updated task title",
+  "description": "Updated description",
+  "status": "in_progress",
+  "priority": "high",
+  "due_date": "2025-12-31T23:59:59Z",
+  "created_at": "2025-12-29T10:00:00Z",
+  "updated_at": "2025-12-29T11:00:00Z",
+  "completed_at": null
+}
+```
+
+**Status Codes:**
+- 200: Todo updated successfully
+- 400: Invalid input data
+- 404: Todo not found
+
+### PATCH /todos/{id}/status
+Update only the status of a todo item
+
+**Request:**
+```json
+{
+  "status": "completed"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid-string",
+  "status": "completed",
+  "updated_at": "2025-12-29T11:00:00Z",
+  "completed_at": "2025-12-29T11:00:00Z"
+}
+```
+
+**Status Codes:**
+- 200: Status updated successfully
+- 400: Invalid status value
+- 404: Todo not found
+
+### DELETE /todos/{id}
+Delete a specific todo item
+
+**Response:**
+```json
+{
+  "message": "Todo deleted successfully"
+}
+```
+
+**Status Codes:**
+- 200: Todo deleted successfully
+- 404: Todo not found
+
+## Error Response Format
+
+All error responses follow this format:
+```json
+{
+  "detail": "Human-readable error message",
+  "error_code": "ERROR_CODE_STRING",
+  "timestamp": "2025-12-29T10:00:00Z"
+}
+```

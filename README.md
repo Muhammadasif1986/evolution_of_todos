@@ -1,102 +1,157 @@
-# Todo Console Application
+# Fullstack Todo Application
 
-A simple console-based todo application implemented in Python that allows users to manage tasks in memory.
+A secure, spec-driven fullstack todo application featuring a Next.js frontend with authentication and a FastAPI backend with PostgreSQL database integration. The application follows modern security practices and spec-driven development principles.
 
-## Features
+## 🚀 Key Features
 
-- Add new tasks with titles and optional descriptions
-- View all tasks with their completion status
-- Mark tasks as complete/incomplete
-- Update existing task details
-- Delete tasks from the list
-- In-memory storage (tasks persist only during the session)
+- **User Authentication**: Complete registration and login system with JWT tokens
+- **Task Management**: Create, read, update, and delete tasks with full CRUD operations
+- **User Isolation**: Tasks are securely isolated by user with proper ownership validation
+- **Responsive UI**: Modern Next.js interface with clean user experience
+- **Secure API**: FastAPI backend with proper authentication and authorization
+- **Database Integration**: Neon Serverless PostgreSQL with SQLModel ORM
+- **Security-focused**: Input validation, authentication middleware, and secure data handling
+- **Spec-driven development**: Comprehensive testing and architecture documentation
 
-## Requirements
+## 🛡️ Security & Ownership
 
-- Python 3.11+
-- No external dependencies required (using built-in libraries only)
-- Optional: pytest for running tests
+- **JWT Authentication**: Secure token-based authentication with proper validation
+- **User Ownership**: Each task is tied to a specific user with ownership validation
+- **Authorization Middleware**: All API endpoints verify user permissions
+- **Password Security**: Bcrypt hashing with proper salt management
+- **Input Validation**: All inputs are validated to prevent injection and errors
+- **Secure Architecture**: Follows security best practices with layered architecture
 
-## Installation
+## ⚙️ Tech Stack
+
+- **Frontend**: Next.js 16+, React, TypeScript
+- **Backend**: Python 3.11+, FastAPI, SQLModel
+- **Database**: Neon Serverless PostgreSQL
+- **Authentication**: JWT tokens with custom auth system
+- **ORM**: SQLModel (SQLAlchemy + Pydantic)
+- **Testing**: pytest for backend, Jest for frontend
+
+## 📦 Installation
 
 1. Clone the repository or download the source code
-2. Ensure you have Python 3.11+ installed
-3. Install optional dependencies for testing:
+2. Install dependencies for both frontend and backend:
    ```bash
+   # Backend setup
+   cd backend
    pip install -r requirements.txt
+
+   # Frontend setup
+   cd ../frontend
+   npm install
    ```
 
-## Usage
+3. Set up environment variables:
+   ```bash
+   # Backend (.env in backend directory)
+   DATABASE_URL="your_postgresql_connection_string"
+   SECRET_KEY="your_secret_key_for_jwt"
 
-To run the application:
+   # Frontend (.env.local in frontend directory)
+   NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+   ```
+
+## ▶️ Usage
+
+To run the fullstack application:
+
+1. Start the backend server:
+   ```bash
+   cd backend
+   uvicorn src.main:app --reload --port 8000
+   ```
+
+2. In a new terminal, start the frontend:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+3. Access the application:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+
+## 📁 Project Structure
+
+```
+backend/
+├── src/
+│   ├── api/
+│   │   └── v1/
+│   │       ├── endpoints/
+│   │       │   ├── auth.py      # Authentication endpoints
+│   │       │   └── tasks.py     # Task management endpoints
+│   │       └── deps.py          # Dependency injection
+│   ├── models/
+│   │   ├── user.py              # User model with authentication
+│   │   └── task.py              # Task model with user relationships
+│   ├── schemas/
+│   │   ├── user.py              # User data schemas
+│   │   └── task.py              # Task data schemas
+│   ├── services/
+│   │   ├── user_service.py      # User business logic
+│   │   └── task_service.py      # Task business logic
+│   ├── utils/
+│   │   └── security.py          # Authentication utilities
+│   └── database.py              # Database configuration
+├── tests/
+└── requirements.txt
+
+frontend/
+├── app/
+│   ├── login/                   # Login page
+│   ├── signup/                  # Registration page
+│   └── tasks/                   # Task management page
+├── components/
+│   └── ui/
+│       └── Header.tsx           # Navigation header
+├── lib/
+│   └── api.ts                   # API client with authentication
+└── package.json
+
+specs/
+├── 001-fullstack-todo-app/
+│   ├── spec.md                  # Feature specification
+│   ├── plan.md                  # Architecture plan
+│   └── tasks.md                 # Implementation tasks
+```
+
+## 🧪 Testing
+
+To run the backend tests:
 
 ```bash
-python src/cli/main.py
-```
-
-Follow the on-screen menu prompts to manage your tasks:
-- **1**: Add Task - Create a new task with title and optional description
-- **2**: View Tasks - Display all tasks with their status and details
-- **3**: Mark Task Complete/Incomplete - Toggle the completion status of a task
-- **4**: Update Task - Modify an existing task's title or description
-- **5**: Delete Task - Remove a task from the list with confirmation
-- **6**: Exit - Quit the application
-
-## Project Structure
-
-```
-src/
-├── models/
-│   └── task.py          # Task model with ID, title, description, completed status
-├── services/
-│   └── todo_service.py  # Core business logic for task management
-├── cli/
-│   └── main.py          # Console interface and menu system
-└── lib/
-    └── utils.py         # Helper functions
-
-tests/
-├── unit/
-│   ├── test_task.py     # Unit tests for Task model
-│   └── test_todo_service.py  # Unit tests for TodoService
-├── integration/
-│   └── test_cli_integration.py  # Integration tests for CLI flow
-└── contract/
-    └── test_api_contract.py  # Contract tests (if API endpoints added later)
-```
-
-## Testing
-
-To run the unit tests:
-
-```bash
-pytest tests/unit/
-```
-
-To run the integration tests:
-
-```bash
-pytest tests/integration/
-```
-
-To run all tests:
-
-```bash
+cd backend
 pytest tests/
 ```
 
-## Architecture
+To run the frontend tests:
 
-The application follows a layered architecture:
-- **Models**: Define the data structures (Task)
-- **Services**: Implement the business logic (TodoService)
-- **CLI**: Handle user interface and input/output
-- **Lib**: Provide utility functions
+```bash
+cd frontend
+npm test
+```
 
-## Error Handling
+## 🏗️ Architecture
 
-The application includes comprehensive error handling:
-- Validation of task titles (must not be empty)
-- Proper handling of invalid task IDs
-- User confirmation for destructive operations
-- Graceful handling of input errors
+The application follows a secure, fullstack architecture:
+- **Frontend**: Next.js application with token-based authentication
+- **Backend**: FastAPI with JWT authentication middleware
+- **Database**: PostgreSQL with proper foreign key relationships
+- **Security**: Layered authentication and authorization with proper validation
+- **API Design**: RESTful endpoints with consistent error handling
+
+## 🔒 Error Handling & Security
+
+The application includes comprehensive error handling and security measures:
+- **JWT Validation**: All protected endpoints verify token validity and user permissions
+- **User Isolation**: Users can only access and modify their own tasks
+- **Input Validation**: All API inputs are validated using Pydantic schemas
+- **Database Relationships**: Proper foreign keys and relationships prevent data corruption
+- **Secure Operations**: Authentication required for all task operations
+- **Spec Compliance**: Follows spec-driven development with comprehensive testing
