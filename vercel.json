@@ -8,14 +8,8 @@
       "outputDirectory": ".next",
       "framework": "nextjs",
       "env": {
-        "NEXT_PUBLIC_API_URL": "@api_url"
+        "NEXT_PUBLIC_API_URL": "https://asifabdulqadir-phase-3-backend.hf.space"
       }
     }
-  ],
-  "env": {
-    "NEXT_PUBLIC_API_URL": {
-      "type": "plaintext",
-      "description": "Backend API URL"
-    }
-  }
+  ]
 }

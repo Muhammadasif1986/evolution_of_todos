@@ -1,6 +1,6 @@
 from typing import List, Optional
 from sqlmodel import Session, select, and_
-from datetime import datetime
+from datetime import datetime, timezone
 from src.models.task import Task, TaskCreate, TaskUpdate
 from src.logging_config import get_logger
 from uuid import UUID
@@ -18,6 +18,8 @@ class TaskService:
             title=task.title,
             description=task.description,
             completed=task.completed,
+            due_date=task.due_date,
+            due_time=task.due_time,
             user_id=user_id
         )
         session.add(db_task)
@@ -35,7 +37,7 @@ class TaskService:
         return tasks
 
     @staticmethod
-    def get_task_by_id_and_user_id(session: Session, task_id: int, user_id: UUID) -> Optional[Task]:
+    def get_task_by_id_and_user_id(session: Session, task_id: UUID, user_id: UUID) -> Optional[Task]:
         """Get a specific task by ID and user ID."""
         logger.info(f"Getting task {task_id} for user {user_id}")
         statement = select(Task).where(
@@ -45,7 +47,7 @@ class TaskService:
         return task
 
     @staticmethod
-    def update_task(session: Session, task_id: int, task_update: TaskUpdate, user_id: UUID) -> Optional[Task]:
+    def update_task(session: Session, task_id: UUID, task_update: TaskUpdate, user_id: UUID) -> Optional[Task]:
         """Update a specific task."""
         logger.info(f"Updating task {task_id} for user {user_id}")
         db_task = TaskService.get_task_by_id_and_user_id(session, task_id, user_id)
@@ -53,7 +55,7 @@ class TaskService:
             update_data = task_update.dict(exclude_unset=True)
             for field, value in update_data.items():
                 setattr(db_task, field, value)
-            db_task.updated_at = datetime.utcnow()
+            db_task.updated_at = datetime.now(timezone.utc)
             session.add(db_task)
             session.commit()
             session.refresh(db_task)
@@ -61,13 +63,13 @@ class TaskService:
         return db_task
 
     @staticmethod
-    def complete_task(session: Session, task_id: int, user_id: UUID) -> Optional[Task]:
+    def complete_task(session: Session, task_id: UUID, user_id: UUID) -> Optional[Task]:
         """Mark a task as complete."""
         logger.info(f"Completing task {task_id} for user {user_id}")
         db_task = TaskService.get_task_by_id_and_user_id(session, task_id, user_id)
         if db_task:
             db_task.completed = True
-            db_task.updated_at = datetime.utcnow()
+            db_task.updated_at = datetime.now(timezone.utc)
             session.add(db_task)
             session.commit()
             session.refresh(db_task)
@@ -75,7 +77,7 @@ class TaskService:
         return db_task
 
     @staticmethod
-    def delete_task(session: Session, task_id: int, user_id: UUID) -> bool:
+    def delete_task(session: Session, task_id: UUID, user_id: UUID) -> bool:
         """Delete a specific task."""
         logger.info(f"Deleting task {task_id} for user {user_id}")
         db_task = TaskService.get_task_by_id_and_user_id(session, task_id, user_id)

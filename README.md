@@ -1,9 +1,12 @@
-# Fullstack Todo Application
+# AI-Powered Todo Chatbot
 
-A secure, spec-driven fullstack todo application featuring a Next.js frontend with authentication and a FastAPI backend with PostgreSQL database integration. The application follows modern security practices and spec-driven development principles.
+An intelligent todo management system that allows users to interact with their tasks through natural language conversations. This fullstack application extends the basic todo functionality with AI-powered features using OpenAI Agents and MCP tools.
 
 ## 🚀 Key Features
 
+- **Natural Language Processing**: AI-powered chat interface for todo management using OpenAI
+- **MCP Tools Integration**: Secure task operations through standardized MCP tools
+- **Persistent Conversations**: Conversation history and context management
 - **User Authentication**: Complete registration and login system with JWT tokens
 - **Task Management**: Create, read, update, and delete tasks with full CRUD operations
 - **User Isolation**: Tasks are securely isolated by user with proper ownership validation
@@ -24,10 +27,12 @@ A secure, spec-driven fullstack todo application featuring a Next.js frontend wi
 
 ## ⚙️ Tech Stack
 
-- **Frontend**: Next.js 16+, React, TypeScript
+- **Frontend**: Next.js 16+, React, TypeScript, OpenAI ChatKit
 - **Backend**: Python 3.11+, FastAPI, SQLModel
+- **AI Framework**: OpenAI Agents SDK
+- **MCP Server**: Python MCP SDK
 - **Database**: Neon Serverless PostgreSQL
-- **Authentication**: JWT tokens with custom auth system
+- **Authentication**: Better Auth, JWT tokens
 - **ORM**: SQLModel (SQLAlchemy + Pydantic)
 - **Testing**: pytest for backend, Jest for frontend
 
@@ -52,12 +57,14 @@ A secure, spec-driven fullstack todo application featuring a Next.js frontend wi
    SECRET_KEY="your_secret_key_for_jwt"
 
    # Frontend (.env.local in frontend directory)
-   NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+   NEXT_PUBLIC_API_BASE_URL="https://asifabdulqadir-phase-3-backend.hf.space"
    ```
 
 ## ▶️ Usage
 
-To run the fullstack application:
+### Local Development
+
+To run the fullstack application locally:
 
 1. Start the backend server:
    ```bash
@@ -74,7 +81,26 @@ To run the fullstack application:
 3. Access the application:
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
+
+### Production Deployment
+
+#### Backend
+The backend is already deployed at: https://asifabdulqadir-phase-3-backend.hf.space
+
+#### Frontend (Vercel Deployment)
+To deploy the frontend to Vercel:
+
+1. Make sure your `NEXT_PUBLIC_API_URL` is set to the deployed backend URL in `frontend/.env`
+2. Install Vercel CLI: `npm i -g vercel`
+3. Navigate to the frontend directory: `cd frontend`
+4. Deploy: `vercel --prod`
+
+Or connect your GitHub repository to Vercel for automatic deployments.
+
+### Access the Application
+   - Frontend: Deployed on Vercel (your frontend URL)
+   - Backend API: https://asifabdulqadir-phase-3-backend.hf.space
+   - API Documentation: https://asifabdulqadir-phase-3-backend.hf.space/docs
 
 ## 📁 Project Structure
 

@@ -13,7 +13,7 @@ const nextConfig = {
     ],
   },
   env: {
-    NEXT_PUBLIC_API_URL:'https://asifabdulqadir-todo-backend.hf.space',
+    NEXT_PUBLIC_API_URL:'https://asifabdulqadir-phase-3-backend.hf.space',
   },
 };
 

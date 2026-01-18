@@ -31,6 +31,8 @@ def get_tasks(
         title=task.title,
         description=task.description,
         completed=task.completed,
+        due_date=task.due_date,
+        due_time=task.due_time,
         created_at=task.created_at,
         updated_at=task.updated_at
     ) for task in tasks]
@@ -59,6 +61,8 @@ def create_task(
         title=created_task.title,
         description=created_task.description,
         completed=created_task.completed,
+        due_date=created_task.due_date,
+        due_time=created_task.due_time,
         created_at=created_task.created_at,
         updated_at=created_task.updated_at
     )
@@ -66,7 +70,7 @@ def create_task(
 
 @router.get("/tasks/{id}", response_model=TaskRead)
 def get_task(
-    id: int,
+    id: UUID,
     current_user: dict = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -88,6 +92,8 @@ def get_task(
         title=task.title,
         description=task.description,
         completed=task.completed,
+        due_date=task.due_date,
+        due_time=task.due_time,
         created_at=task.created_at,
         updated_at=task.updated_at
     )
@@ -95,7 +101,7 @@ def get_task(
 
 @router.put("/tasks/{id}", response_model=TaskRead)
 def update_task(
-    id: int,
+    id: UUID,
     task_update: TaskUpdate,
     current_user: dict = Depends(get_current_user),
     session: Session = Depends(get_session)
@@ -123,6 +129,8 @@ def update_task(
         title=updated_task.title,
         description=updated_task.description,
         completed=updated_task.completed,
+        due_date=updated_task.due_date,
+        due_time=updated_task.due_time,
         created_at=updated_task.created_at,
         updated_at=updated_task.updated_at
     )
@@ -130,7 +138,7 @@ def update_task(
 
 @router.delete("/tasks/{id}")
 def delete_task(
-    id: int,
+    id: UUID,
     current_user: dict = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -150,7 +158,7 @@ def delete_task(
 
 @router.patch("/tasks/{id}/complete", response_model=TaskRead)
 def complete_task(
-    id: int,
+    id: UUID,
     current_user: dict = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -172,6 +180,8 @@ def complete_task(
         title=completed_task.title,
         description=completed_task.description,
         completed=completed_task.completed,
+        due_date=completed_task.due_date,
+        due_time=completed_task.due_time,
         created_at=completed_task.created_at,
         updated_at=completed_task.updated_at
     )
