@@ -363,30 +363,30 @@ export default function TasksPage() {
                 {editingTaskId === task.id ? (
                   // Edit Mode
                   <form onSubmit={(e) => handleEditSubmit(task.id, e)} className="space-y-4">
-                    <div className="flex items-start gap-4">
+                    <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                       <input
                         type="checkbox"
                         checked={task.completed}
                         onChange={() => toggleTaskCompletion(task.id)}
-                        className="w-5 h-5 text-accent-primary border-gray-300 rounded-lg cursor-pointer mt-1 accent-accent-primary"
+                        className="w-5 h-5 text-accent-primary border-gray-300 rounded-lg cursor-pointer mt-1 accent-accent-primary flex-shrink-0"
                       />
-                      <div className="flex-1 space-y-3">
+                      <div className="flex-1 min-w-0 space-y-3 w-full">
                         <input
                           type="text"
                           value={editTaskData.title}
                           onChange={(e) => setEditTaskData({...editTaskData, title: e.target.value})}
-                          className="input-base text-gray-900 bg-white/80"
+                          className="input-base text-gray-900 bg-white/80 w-full"
                           placeholder="Task title"
                           required
                         />
                         <textarea
                           value={editTaskData.description}
                           onChange={(e) => setEditTaskData({...editTaskData, description: e.target.value})}
-                          className="input-base text-gray-900 bg-white/80 resize-none"
+                          className="input-base text-gray-900 bg-white/80 resize-none w-full"
                           placeholder="Task description"
                           rows={2}
                         />
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <input
                             type="date"
                             value={editTaskData.due_date}
@@ -402,10 +402,10 @@ export default function TasksPage() {
                             placeholder="Due time"
                           />
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                           <button
                             type="submit"
-                            className="btn-primary text-sm flex items-center gap-2"
+                            className="btn-primary text-sm flex items-center justify-center gap-2 py-2.5 w-full sm:w-auto"
                           >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
@@ -415,7 +415,7 @@ export default function TasksPage() {
                           <button
                             type="button"
                             onClick={cancelEditing}
-                            className="btn-outline text-sm flex items-center gap-2"
+                            className="btn-outline text-sm flex items-center justify-center gap-2 py-2.5 w-full sm:w-auto"
                           >
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -428,18 +428,18 @@ export default function TasksPage() {
                   </form>
                 ) : (
                   // Display Mode
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                     <input
                       type="checkbox"
                       checked={task.completed}
                       onChange={() => toggleTaskCompletion(task.id)}
-                      className="w-5 h-5 text-accent-primary border-gray-300 rounded-lg cursor-pointer mt-1 accent-accent-primary"
+                      className="w-5 h-5 text-accent-primary border-gray-300 rounded-lg cursor-pointer mt-1 accent-accent-primary flex-shrink-0"
                     />
 
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <p className={`text-base font-semibold transition-all duration-300 ${
+                    <div className="flex-1 min-w-0 w-full">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-base font-semibold transition-all duration-300 truncate ${
                             task.completed
                               ? 'line-through text-gray-400'
                               : 'text-gray-900'
@@ -451,23 +451,23 @@ export default function TasksPage() {
                               task.completed
                                 ? 'line-through text-gray-400'
                                 : 'text-gray-600'
-                            }`}>
+                            } break-words`}>
                               {task.description}
                             </p>
                           )}
                           {(task.due_date || task.due_time) && (
-                            <div className="flex items-center gap-2 mt-2">
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
                               {task.due_date && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 max-w-full">
+                                  <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                   </svg>
-                                  {new Date(task.due_date).toLocaleDateString()}
+                                  <span className="truncate">{new Date(task.due_date).toLocaleDateString()}</span>
                                 </span>
                               )}
                               {task.due_time && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
-                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
                                   {task.due_time}
@@ -477,8 +477,8 @@ export default function TasksPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 ${
+                        <div className="task-actions-container">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 flex-shrink-0 ${
                             task.completed
                               ? 'badge-success'
                               : 'badge-warning'
@@ -488,7 +488,7 @@ export default function TasksPage() {
 
                           <button
                             onClick={() => startEditing(task)}
-                            className="p-2 hover:bg-blue-100/50 rounded-lg transition-colors text-blue-600 hover:text-blue-700"
+                            className="task-action-button"
                             title="Edit task"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -498,7 +498,7 @@ export default function TasksPage() {
 
                           <button
                             onClick={() => deleteTask(task.id)}
-                            className="p-2 hover:bg-red-100/50 rounded-lg transition-colors text-red-600 hover:text-red-700"
+                            className="task-delete-button"
                             title="Delete task"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
