@@ -214,6 +214,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - In-memory storage using Python data structures (no persistent storage) (001-todo-console-app)
 - Python 3.11+ (Backend), TypeScript/JavaScript (Frontend with Next.js) + FastAPI (Backend), Next.js 16+ (Frontend), SQLModel (ORM), Neon Serverless PostgreSQL (Database) (001-fullstack-todo-app)
 - Neon Serverless PostgreSQL database with SQLModel ORM (001-fullstack-todo-app)
+- Docker, Minikube, kubectl, Helm, kubectl-ai, Kagent, Kubernetes YAML manifests, Helm Chart templates (001-k8s-minikube-deployment)
 
 ## Recent Changes
 - 001-todo-console-app: Added Python 3.11+ + Built-in Python libraries only (no external dependencies for console app)
+- 001-k8s-minikube-deployment: Added Docker, Minikube, kubectl, Helm, kubectl-ai, Kagent, Kubernetes YAML manifests, Helm Chart templates
