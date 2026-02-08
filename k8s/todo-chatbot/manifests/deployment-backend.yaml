@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-chatbot-backend
+  namespace: todo-chatbot
+  labels:
+    app: todo-chatbot-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-chatbot-backend
+  template:
+    metadata:
+      labels:
+        app: todo-chatbot-backend
+    spec:
+      containers:
+      - name: backend
+        image: todo-chatbot/backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: todo-chatbot-db-secret
+              key: database-url
+        - name: FRONTEND_URL
+          value: "http://todo-chatbot.local"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi

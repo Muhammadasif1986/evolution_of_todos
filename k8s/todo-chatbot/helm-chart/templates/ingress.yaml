@@ -1,0 +1,37 @@
+{{- if .Values.ingress.enabled }}
+{{- $fullName := include "todo-chatbot.fullname" . -}}
+{{- $svcPort := .Values.frontend.service.port -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo-chatbot.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options DENY";
+      more_set_headers "X-Content-Type-Options nosniff";
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+  - host: {{ .Values.frontend.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullName }}-frontend
+            port:
+              number: {{ $svcPort }}
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullName }}-backend
+            port:
+              number: {{ .Values.backend.service.port }}
+{{- end }}

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-chatbot-frontend
+  namespace: todo-chatbot
+  labels:
+    app: todo-chatbot-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-chatbot-frontend
+  template:
+    metadata:
+      labels:
+        app: todo-chatbot-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: todo-chatbot/frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://todo-chatbot-backend.todo-chatbot.svc.cluster.local:8000"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
