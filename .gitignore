@@ -151,3 +151,11 @@ frontend/build/
 **/venv/
 **/env/
 **/.env
+
+# Large files to exclude
+*.deb
+*.exe
+minikube
+minikube-linux-amd64.deb
+minikube-windows-amd64.exe
+minikube.exe
