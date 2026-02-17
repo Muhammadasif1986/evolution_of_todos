@@ -198,7 +198,7 @@ async def process_with_gemini_agent(
             sanitized_messages.append(messages[-1])
 
         # Call the OpenRouter API using the OpenAI-compatible interface with tools
-        model_to_use = settings.model or settings.model_ or "xiaomi/mimo-v2-flash:free"
+        model_to_use = settings.model or settings.model_ or "meta-llama/llama-3.1-8b-instruct:free"
         response = await client.chat.completions.create(
             model=model_to_use,
             messages=sanitized_messages,
@@ -287,7 +287,7 @@ async def process_with_gemini_agent(
                     follow_up_messages.append(tool_result_content)
 
                 # Get the final response from the model after processing tool results
-                model_to_use = settings.model or settings.model_ or "xiaomi/mimo-v2-flash:free"
+                model_to_use = settings.model or settings.model_ or "meta-llama/llama-3.1-8b-instruct:free"
                 final_response = await client.chat.completions.create(
                     model=model_to_use,
                     messages=follow_up_messages,
