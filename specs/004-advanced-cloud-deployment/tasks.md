@@ -73,7 +73,7 @@
 - [X] T040 [US2] Set up Kafka task-updates topic for real-time sync
 - [X] T041 [US2] Implement error handling and dead letter queues for events
 - [X] T042 [US2] Add idempotency to event processors to handle duplicates
-- [ ] T043 [US2] Implement monitoring for Kafka event processing with 99% reliability target
+- [X] T043 [US2] Implement monitoring for Kafka event processing with 99% reliability target
 - [ ] T044 [US2] Test high-concurrency event processing without blocking
 - [X] T045 [US2] Implement audit logging service that consumes task events
 - [X] T046 [US2] Create event schema validation middleware
@@ -93,7 +93,7 @@
 - [ ] T053 [US3] Test Dapr state management functionality
 - [ ] T054 [US3] Test Dapr service invocation with retries and circuit breakers
 - [X] T055 [US3] Implement health checks for Dapr sidecars
-- [ ] T056 [US3] Configure Dapr for distributed tracing
+- [X] T056 [US3] Configure Dapr for distributed tracing
 
 ## Phase 6: Cross-Cutting & Polish
 

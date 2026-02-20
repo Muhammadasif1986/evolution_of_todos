@@ -2,13 +2,14 @@ import json
 from typing import Dict, Any
 from datetime import datetime
 from sqlmodel import Session
-from src.services.kafka_service import get_kafka_consumer, KafkaConsumerService, DEAD_LETTER_TOPIC
+from src.services.kafka_service import get_kafka_consumer, KafkaConsumerService, DEAD_LETTER_TOPIC, TASK_EVENTS_TOPIC, REMINDERS_TOPIC, TASK_UPDATES_TOPIC
 from src.models.event import Event
 from src.logging_config import get_logger
 from src.database.database import get_session
 from uuid import UUID
 import asyncio
 from src.middleware.event_validation import event_validator
+from src.services.kafka_monitoring import kafka_monitor
 
 
 logger = get_logger(__name__)
@@ -51,15 +52,20 @@ class EventProcessorService:
     @staticmethod
     def process_task_event(event_data: Dict[str, Any], session: Session):
         """Process task-related events with idempotency and error handling."""
+        event_type = event_data.get("event_type", "unknown")
+
+        # Record that event was received for monitoring
+        kafka_monitor.record_event_received(event_type, TASK_EVENTS_TOPIC)
+
         try:
             # Validate the event data first
-            is_valid, validation_error = event_validator.validate_event(
-                event_data.get("event_type", "unknown"),
-                event_data
-            )
+            is_valid, validation_error = event_validator.validate_event(event_type, event_data)
 
             if not is_valid:
                 logger.error(f"Event validation failed: {validation_error}")
+
+                # Record validation error for monitoring
+                kafka_monitor.record_processing_error(event_type, "validation_error")
 
                 # Send invalid event to dead letter queue
                 try:
@@ -81,9 +87,13 @@ class EventProcessorService:
                     kafka_producer.producer.flush()
 
                     logger.info(f"Invalid event sent to dead letter queue: {event_data.get('task_id')}")
+                    # Record failed processing for monitoring
+                    kafka_monitor.record_event_processed(event_type, TASK_EVENTS_TOPIC, success=False)
                     return  # Don't process invalid events
                 except Exception as dlq_error:
                     logger.error(f"Failed to send invalid event to dead letter queue: {dlq_error}")
+                    # Record failed processing for monitoring
+                    kafka_monitor.record_event_processed(event_type, TASK_EVENTS_TOPIC, success=False)
                     return  # Don't process if we can't handle the invalid event properly
 
             # Sanitize the event data
@@ -92,9 +102,10 @@ class EventProcessorService:
             # Check for duplicate event
             if EventProcessorService.is_duplicate_event(event_data):
                 logger.info(f"Duplicate event detected, skipping: {event_data.get('task_type', 'unknown')} for task {event_data.get('task_id')}")
+                # Even duplicate events are processed successfully from monitoring perspective
+                kafka_monitor.record_event_processed(event_type, TASK_EVENTS_TOPIC, success=True)
                 return
 
-            event_type = event_data.get("event_type")
             task_id = event_data.get("task_id")
             user_id = event_data.get("user_id")
             timestamp = event_data.get("timestamp")
@@ -138,8 +149,15 @@ class EventProcessorService:
                 logger.info(f"Task {event_type}: {task_id}")
                 # Handle other task events as needed
 
+            # Record successful processing for monitoring
+            kafka_monitor.record_event_processed(event_type, TASK_EVENTS_TOPIC, success=True)
+
         except Exception as e:
             logger.error(f"Error processing task event: {e}")
+
+            # Record processing error for monitoring
+            kafka_monitor.record_processing_error(event_type, "processing_error")
+            kafka_monitor.record_event_processed(event_type, TASK_EVENTS_TOPIC, success=False)
 
             # Send failed event to dead letter queue
             try:
@@ -181,12 +199,20 @@ class EventProcessorService:
     @staticmethod
     def process_reminder_event(event_data: Dict[str, Any], session: Session):
         """Process reminder-related events with idempotency and error handling."""
+        event_type = "reminder"
+
+        # Record that event was received for monitoring
+        kafka_monitor.record_event_received(event_type, REMINDERS_TOPIC)
+
         try:
             # Validate the reminder event
-            is_valid, validation_error = event_validator.validate_event("reminder", event_data)
+            is_valid, validation_error = event_validator.validate_event(event_type, event_data)
 
             if not is_valid:
                 logger.error(f"Reminder event validation failed: {validation_error}")
+
+                # Record validation error for monitoring
+                kafka_monitor.record_processing_error(event_type, "validation_error")
 
                 # Send invalid event to dead letter queue
                 try:
@@ -208,9 +234,13 @@ class EventProcessorService:
                     kafka_producer.producer.flush()
 
                     logger.info(f"Invalid reminder event sent to dead letter queue: {event_data.get('task_id')}")
+                    # Record failed processing for monitoring
+                    kafka_monitor.record_event_processed(event_type, REMINDERS_TOPIC, success=False)
                     return  # Don't process invalid events
                 except Exception as dlq_error:
                     logger.error(f"Failed to send invalid reminder event to dead letter queue: {dlq_error}")
+                    # Record failed processing for monitoring
+                    kafka_monitor.record_event_processed(event_type, REMINDERS_TOPIC, success=False)
                     return  # Don't process if we can't handle the invalid event properly
 
             # Sanitize the event data
@@ -248,8 +278,15 @@ class EventProcessorService:
             # Additional processing can be added here, such as sending the actual notification
             logger.info(f"Reminder scheduled for task {task_id}")
 
+            # Record successful processing for monitoring
+            kafka_monitor.record_event_processed(event_type, REMINDERS_TOPIC, success=True)
+
         except Exception as e:
             logger.error(f"Error processing reminder event: {e}")
+
+            # Record processing error for monitoring
+            kafka_monitor.record_processing_error(event_type, "processing_error")
+            kafka_monitor.record_event_processed(event_type, REMINDERS_TOPIC, success=False)
 
             # Send failed event to dead letter queue
             try:

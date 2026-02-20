@@ -133,6 +133,7 @@ def health_check():
 from src.services.metrics_service import get_metrics
 from fastapi.responses import Response
 from src.health.dapr_health import get_dapr_health_status
+from src.services.kafka_monitoring import kafka_monitor
 
 @app.get("/metrics")
 def get_prometheus_metrics():
@@ -143,6 +144,11 @@ def get_prometheus_metrics():
 async def dapr_health_check():
     """Endpoint to check Dapr sidecar health."""
     return await get_dapr_health_status()
+
+@app.get("/kafka/monitoring")
+async def kafka_monitoring():
+    """Endpoint to get Kafka event processing monitoring metrics."""
+    return kafka_monitor.get_all_reliability_metrics()
 
 if __name__ == "__main__":
     import uvicorn

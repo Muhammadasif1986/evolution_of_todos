@@ -4,6 +4,8 @@ from typing import Dict, Any, Optional
 from src.config import settings
 from src.logging_config import get_logger
 from pydantic import BaseModel
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
 
 
 logger = get_logger(__name__)
@@ -38,30 +40,50 @@ class DaprService:
         Returns:
             Response data from the target service
         """
-        url = f"{self.dapr_http_endpoint}/v1.0/invoke/{app_id}/method/{method}"
+        # Create a trace span for the service invocation
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span(
+            f"dapr.invoke.{app_id}.{method}",
+            kind=SpanKind.CLIENT
+        ) as span:
+            # Add attributes to the span
+            span.set_attribute("dapr.app_id", app_id)
+            span.set_attribute("dapr.method", method)
+            span.set_attribute("http.method", verb)
 
-        try:
-            async with httpx.AsyncClient() as client:
-                if verb.upper() == "GET":
-                    response = await client.get(url)
-                elif verb.upper() == "POST":
-                    response = await client.post(url, json=data)
-                elif verb.upper() == "PUT":
-                    response = await client.put(url, json=data)
-                elif verb.upper() == "DELETE":
-                    response = await client.delete(url)
-                else:
-                    raise ValueError(f"Unsupported HTTP verb: {verb}")
+            url = f"{self.dapr_http_endpoint}/v1.0/invoke/{app_id}/method/{method}"
 
-            response.raise_for_status()
-            return response.json() if response.content else {}
+            try:
+                async with httpx.AsyncClient() as client:
+                    if verb.upper() == "GET":
+                        response = await client.get(url)
+                    elif verb.upper() == "POST":
+                        response = await client.post(url, json=data)
+                    elif verb.upper() == "PUT":
+                        response = await client.put(url, json=data)
+                    elif verb.upper() == "DELETE":
+                        response = await client.delete(url)
+                    else:
+                        raise ValueError(f"Unsupported HTTP verb: {verb}")
 
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error during service invocation: {e}")
-            raise
-        except Exception as e:
-            logger.error(f"Error invoking service {app_id}/{method}: {e}")
-            raise
+                response.raise_for_status()
+
+                # Add response attributes to span
+                span.set_attribute("http.status_code", response.status_code)
+
+                result = response.json() if response.content else {}
+                return result
+
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error during service invocation: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                raise
+            except Exception as e:
+                logger.error(f"Error invoking service {app_id}/{method}: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                raise
 
     async def save_state(
         self,
@@ -82,27 +104,46 @@ class DaprService:
         Returns:
             True if successful, False otherwise
         """
-        url = f"{self.dapr_http_endpoint}/v1.0/state/{store_name}"
+        # Create a trace span for the state operation
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span(
+            "dapr.state.save",
+            kind=SpanKind.CLIENT
+        ) as span:
+            # Add attributes to the span
+            span.set_attribute("dapr.store_name", store_name)
+            span.set_attribute("dapr.key", key)
+            span.set_attribute("dapr.operation", "save")
 
-        state_item = {
-            "key": key,
-            "value": value
-        }
+            url = f"{self.dapr_http_endpoint}/v1.0/state/{store_name}"
 
-        if etag:
-            state_item["etag"] = etag
+            state_item = {
+                "key": key,
+                "value": value
+            }
 
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=[state_item])
-                response.raise_for_status()
-                return True
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error during state save: {e}")
-            return False
-        except Exception as e:
-            logger.error(f"Error saving state for key {key}: {e}")
-            return False
+            if etag:
+                state_item["etag"] = etag
+
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(url, json=[state_item])
+                    response.raise_for_status()
+
+                    # Add response attributes to span
+                    span.set_attribute("http.status_code", response.status_code)
+
+                    return True
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error during state save: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return False
+            except Exception as e:
+                logger.error(f"Error saving state for key {key}: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return False
 
     async def get_state(
         self,
@@ -119,23 +160,41 @@ class DaprService:
         Returns:
             The stored value or None if not found
         """
-        url = f"{self.dapr_http_endpoint}/v1.0/state/{store_name}/{key}"
+        # Create a trace span for the state operation
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span(
+            "dapr.state.get",
+            kind=SpanKind.CLIENT
+        ) as span:
+            # Add attributes to the span
+            span.set_attribute("dapr.store_name", store_name)
+            span.set_attribute("dapr.key", key)
+            span.set_attribute("dapr.operation", "get")
 
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(url)
-                if response.status_code == 200:
-                    return response.json()
-                elif response.status_code == 404:
-                    return None
-                else:
-                    response.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error during state retrieval: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Error getting state for key {key}: {e}")
-            return None
+            url = f"{self.dapr_http_endpoint}/v1.0/state/{store_name}/{key}"
+
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(url)
+                    if response.status_code == 200:
+                        result = response.json()
+                        span.set_attribute("http.status_code", response.status_code)
+                        return result
+                    elif response.status_code == 404:
+                        span.set_attribute("http.status_code", response.status_code)
+                        return None
+                    else:
+                        response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error during state retrieval: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return None
+            except Exception as e:
+                logger.error(f"Error getting state for key {key}: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return None
 
     async def publish_event(
         self,
@@ -154,19 +213,38 @@ class DaprService:
         Returns:
             True if successful, False otherwise
         """
-        url = f"{self.dapr_http_endpoint}/v1.0/publish/{pubsub_name}/{topic_name}"
+        # Create a trace span for the pub/sub operation
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span(
+            "dapr.publish",
+            kind=SpanKind.PRODUCER
+        ) as span:
+            # Add attributes to the span
+            span.set_attribute("dapr.pubsub_name", pubsub_name)
+            span.set_attribute("dapr.topic_name", topic_name)
+            span.set_attribute("dapr.operation", "publish")
 
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=data)
-                response.raise_for_status()
-                return True
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error during event publishing: {e}")
-            return False
-        except Exception as e:
-            logger.error(f"Error publishing event to {pubsub_name}/{topic_name}: {e}")
-            return False
+            url = f"{self.dapr_http_endpoint}/v1.0/publish/{pubsub_name}/{topic_name}"
+
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(url, json=data)
+                    response.raise_for_status()
+
+                    # Add response attributes to span
+                    span.set_attribute("http.status_code", response.status_code)
+
+                    return True
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error during event publishing: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return False
+            except Exception as e:
+                logger.error(f"Error publishing event to {pubsub_name}/{topic_name}: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return False
 
     async def get_secret(
         self,
@@ -185,31 +263,49 @@ class DaprService:
         Returns:
             The secret value or None if not found
         """
-        url = f"{self.dapr_http_endpoint}/v1.0/secrets/{store_name}/{key}"
+        # Create a trace span for the secret operation
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span(
+            "dapr.secret.get",
+            kind=SpanKind.CLIENT
+        ) as span:
+            # Add attributes to the span
+            span.set_attribute("dapr.store_name", store_name)
+            span.set_attribute("dapr.key", key)
+            span.set_attribute("dapr.operation", "get_secret")
 
-        if metadata:
-            # Convert metadata to query parameters
-            import urllib.parse
-            params = "&".join([f"{k}={urllib.parse.quote(str(v))}" for k, v in metadata.items()])
-            url += f"?{params}"
+            url = f"{self.dapr_http_endpoint}/v1.0/secrets/{store_name}/{key}"
 
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(url)
-                if response.status_code == 200:
-                    result = response.json()
-                    # Dapr returns a dictionary with the key as the secret name
-                    return result.get(key)
-                elif response.status_code == 404:
-                    return None
-                else:
-                    response.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error during secret retrieval: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Error getting secret {key} from {store_name}: {e}")
-            return None
+            if metadata:
+                # Convert metadata to query parameters
+                import urllib.parse
+                params = "&".join([f"{k}={urllib.parse.quote(str(v))}" for k, v in metadata.items()])
+                url += f"?{params}"
+
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(url)
+                    if response.status_code == 200:
+                        result = response.json()
+                        # Dapr returns a dictionary with the key as the secret name
+                        secret_value = result.get(key)
+                        span.set_attribute("http.status_code", response.status_code)
+                        return secret_value
+                    elif response.status_code == 404:
+                        span.set_attribute("http.status_code", response.status_code)
+                        return None
+                    else:
+                        response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error during secret retrieval: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return None
+            except Exception as e:
+                logger.error(f"Error getting secret {key} from {store_name}: {e}")
+                span.set_attribute("error", True)
+                span.set_attribute("error.message", str(e))
+                return None
 
 
 # Global Dapr service instance
