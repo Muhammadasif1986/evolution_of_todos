@@ -2,7 +2,7 @@ fastapi==0.115.0
 uvicorn[standard]==0.34.0
 sqlmodel==0.0.22
 pydantic==2.10.3
-pydantic-settings==2.7.0
+pydantic-settings==2.7.1
 asyncpg==0.30.0
 alembic==1.14.0
 python-jose[cryptography]==3.3.0
@@ -17,3 +17,9 @@ psycopg2-binary==2.9.10
 sqlalchemy==2.0.36
 openai==1.52.2
 google-generativeai==0.8.4
+kafka-python==2.0.2
+dapr==1.9.0
+dapr-ext-fastapi==1.9.0
+python-dateutil==2.9.0
+apscheduler==3.10.4
+neon-python==0.1.0

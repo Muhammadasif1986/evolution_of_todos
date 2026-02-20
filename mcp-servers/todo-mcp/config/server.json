@@ -1,0 +1,28 @@
+{
+  "version": "2.0",
+  "name": "todo-mcp",
+  "description": "Todo Chatbot MCP Server for AI integration",
+  "capabilities": {
+    "tools": {
+      "list": true
+    },
+    "prompts": {
+      "list": true,
+      "read": true
+    },
+    "resources": {
+      "list": true,
+      "read": true
+    }
+  },
+  "transport": {
+    "stdio": {}
+  },
+  "healthCheck": {
+    "enabled": true,
+    "endpoint": "/health"
+  },
+  "endpoints": {
+    "base_url": "http://localhost:8000"
+  }
+}

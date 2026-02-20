@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/todo
+      - KAFKA_BROKERS=kafka:9092
+      - DAPR_HTTP_ENDPOINT=http://localhost:3500
+      - DAPR_GRPC_ENDPOINT=grpc://localhost:50001
+    depends_on:
+      - db
+      - kafka
+      - dapr-placement
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: >
+      sh -c "npm run dev"
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: todo
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  kafka:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --smp
+      - '1'
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 100M
+      - --overprovisioned
+      - --node-id
+      - '0'
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+      - --advertise-kafka-addr
+      - PLAINTEXT://kafka:9092,OUTSIDE://localhost:9093
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+      - "9644:9644"
+
+  dapr-placement:
+    image: "daprio/dapr:1.9.0"
+    command: ["./placement", "-port", "50005"]
+    ports:
+      - "50005:50005"
+
+  dapr-sidecar-injector:
+    image: "daprio/dapr:1.9.0"
+    command: ["./dashboard", "-k", "8080"]
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

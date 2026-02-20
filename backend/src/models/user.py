@@ -5,6 +5,7 @@ from src.models.base import UUIDModel
 from sqlalchemy import Column, DateTime, func
 import uuid
 from typing import TYPE_CHECKING
+from sqlalchemy.dialects.postgresql import JSON
 
 
 if TYPE_CHECKING:
@@ -18,6 +19,8 @@ class UserBase(SQLModel):
     first_name: Optional[str] = Field(default=None, max_length=100)
     last_name: Optional[str] = Field(default=None, max_length=100)
     is_active: bool = Field(default=True)
+    # Store user preferences as JSON string
+    preferences: Optional[str] = Field(default=None, sa_column=Column("preferences", JSON, nullable=True))
 
 
 class User(UserBase, UUIDModel, table=True):
@@ -50,6 +53,7 @@ class UserUpdate(SQLModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     password: Optional[str] = None
+    preferences: Optional[str] = None
 
 
 class UserRead(UserBase):

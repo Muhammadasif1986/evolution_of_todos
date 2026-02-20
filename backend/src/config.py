@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List
 
 
 class Settings(BaseSettings):
@@ -24,10 +24,16 @@ class Settings(BaseSettings):
 
     # CORS
     frontend_url: str = "http://localhost:3000"
+    allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:8000", "http://127.0.0.1:3000"]  # Additional allowed origins
 
     # Additional settings that might be in the environment
     environment: Optional[str] = "development"
     debug: Optional[bool] = True
+
+    # Kafka and Dapr
+    kafka_brokers: str = "localhost:9092"
+    dapr_http_endpoint: str = "http://localhost:3500"
+    dapr_grpc_endpoint: str = "http://localhost:50001"
 
     class Config:
         env_file = ".env"

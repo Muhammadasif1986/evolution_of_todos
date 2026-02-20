@@ -1,0 +1,102 @@
+# Default values for todo-chatbot.
+
+# Backend configuration
+backend:
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 3
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: todo-secrets
+          key: database_url
+    - name: KAFKA_BROKERS
+      value: "todo-kafka-cluster-kafka-bootstrap:9092"
+    - name: DAPR_HTTP_ENDPOINT
+      value: "http://localhost:3500"
+    - name: DAPR_GRPC_ENDPOINT
+      value: "http://localhost:50001"
+
+# Frontend configuration
+frontend:
+  image:
+    repository: todo-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 125m
+      memory: 128Mi
+  env:
+    - name: NEXT_PUBLIC_API_URL
+      value: "http://todo-backend-svc:8000"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: todo-chatbot.local
+      paths:
+        - path: /
+          pathType: Prefix
+          backendService:
+            name: todo-frontend-svc
+            port: 3000
+        - path: /api
+          pathType: Prefix
+          backendService:
+            name: todo-backend-svc
+            port: 8000
+
+# Dapr configuration
+dapr:
+  enabled: true
+  components:
+    kafka:
+      brokers: "todo-kafka-cluster-kafka-bootstrap:9092"
+      consumerGroup: "todo-service"
+      authType: "none"
+
+# Kafka configuration (when using Strimzi)
+kafka:
+  enabled: true
+  clusterName: "todo-kafka-cluster"
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    username: "todo_user"
+    password: "todo_password"
+    database: "todo_db"
+  architecture: standalone
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
